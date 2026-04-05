@@ -1,0 +1,6 @@
+use yew::prelude::*;
+
+#[function_component(IdentificacionSection)]
+pub fn identificacion_section() -> Html {
+    html! { <section>{ "Identificación (base)" }</section> }
+}
