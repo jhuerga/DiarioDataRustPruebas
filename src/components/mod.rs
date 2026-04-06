@@ -1,4 +1,3 @@
-pub mod layout;
 pub mod inputs;
-pub mod persona;
-pub mod validators;
+pub mod layout;
+pub mod persona_form;

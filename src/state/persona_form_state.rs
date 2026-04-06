@@ -1,210 +1,205 @@
 use crate::state::persona_form_model::*;
 use crate::state::validators::*;
 use yew::prelude::*;
+use std::rc::Rc;
 
-#[derive(Clone)]
+//
+// ============================================================
+//  ESTADO PRINCIPAL DEL FORMULARIO (REDUCER MODERNO)
+// ============================================================
+//
+
+#[derive(Clone, PartialEq)]
 pub struct PersonaFormState {
-    pub form: UseStateHandle<PersonaForm>,
+    pub form: PersonaForm,
 
-    pub warning_dni: UseStateHandle<Option<String>>,
-    pub warning_naf: UseStateHandle<Option<String>>,
-    pub warning_iban: UseStateHandle<Option<String>>,
-    pub warning_menor_edad: UseStateHandle<Option<String>>,
+    pub warning_dni: Option<String>,
+    pub warning_naf: Option<String>,
+    pub warning_iban: Option<String>,
+    pub warning_menor_edad: Option<String>,
 }
 
-impl PersonaFormState {
-    pub fn new(ctx: &Context<impl Component>) -> Self {
+impl Default for PersonaFormState {
+    fn default() -> Self {
         Self {
-            form: use_state(|| PersonaForm::default()),
-            warning_dni: use_state(|| None),
-            warning_naf: use_state(|| None),
-            warning_iban: use_state(|| None),
-            warning_menor_edad: use_state(|| None),
+            form: PersonaForm::default(),
+            warning_dni: None,
+            warning_naf: None,
+            warning_iban: None,
+            warning_menor_edad: None,
         }
     }
 }
 
 //
 // ============================================================
-//  SETTERS CON VALIDACIONES INTEGRADAS
+//  ACCIONES DEL REDUCER
 // ============================================================
 //
 
-impl PersonaFormState {
+pub enum PersonaFormAction {
+    // Identificación
+    SetDni(String),
+    SetTipoDocumento(TipoDocumento),
+    SetNaf(String),
+    SetFechaCaducidadDocumento(Option<String>),
 
-    // ------------------------------------------------------------
-    // IDENTIFICACIÓN
-    // ------------------------------------------------------------
+    // Datos personales
+    SetFechaNacimiento(Option<String>),
+    SetEstadoCivil(EstadoCivil),
+    SetSexo(Sexo),
+    SetNacionalidad(Option<String>),
 
-    pub fn set_dni(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.identificacion.dni = value.clone();
+    // Datos fiscales
+    SetIban(String),
+    SetCp(String),
+    SetDomicilio(String),
+    SetPoblacion(String),
+    SetProvincia(Option<String>),
 
-        // Validación DNI/NIE/PAS
-        let warning = validar_dni_nie_pasaporte(&value, &f.identificacion.tipo_documento);
-        self.warning_dni.set(warning);
+    // Contacto
+    SetEmail(String),
+    SetPrefijoPais(Option<String>),
+    SetTelefono(String),
 
-        self.form.set(f);
-    }
+    // Otros datos
+    SetContratar(bool),
+    SetObservaciones(String),
+    SetClasInfo1(String),
+    SetClasInfo2(String),
+}
 
-    pub fn set_tipo_documento(&self, value: TipoDocumento) {
-        let mut f = (*self.form).clone();
-        f.identificacion.tipo_documento = value.clone();
+//
+// ============================================================
+//  REDUCER PRINCIPAL
+// ============================================================
+//
 
-        // Revalidar DNI/NIE/PAS al cambiar el tipo
-        let dni = f.identificacion.dni.clone();
-        let warning = validar_dni_nie_pasaporte(&dni, &value);
-        self.warning_dni.set(warning);
+impl Reducible for PersonaFormState {
+    type Action = PersonaFormAction;
 
-        self.form.set(f);
-    }
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+        let mut new = (*self).clone();
 
-    pub fn set_naf(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.identificacion.naf = value.clone();
+        match action {
+            //
+            // IDENTIFICACIÓN
+            //
+            PersonaFormAction::SetDni(value) => {
+                new.form.identificacion.dni = value.clone();
+                new.warning_dni = validar_dni_nie_pasaporte(
+                    &value,
+                    &new.form.identificacion.tipo_documento,
+                );
+            }
 
-        // Validación NAF
-        let warning = validar_naf(&value);
-        self.warning_naf.set(warning);
+            PersonaFormAction::SetTipoDocumento(value) => {
+                new.form.identificacion.tipo_documento = value.clone();
+                new.warning_dni = validar_dni_nie_pasaporte(
+                    &new.form.identificacion.dni,
+                    &value,
+                );
+            }
 
-        self.form.set(f);
-    }
+            PersonaFormAction::SetNaf(value) => {
+                new.form.identificacion.naf = value.clone();
+                new.warning_naf = validar_naf(&value);
+            }
 
-    pub fn set_fecha_caducidad_documento(&self, value: Option<String>) {
-        let mut f = (*self.form).clone();
-        f.identificacion.fecha_caducidad_documento = value;
-        self.form.set(f);
-    }
+            PersonaFormAction::SetFechaCaducidadDocumento(value) => {
+                new.form.identificacion.fecha_caducidad_documento = value;
+            }
 
-    // ------------------------------------------------------------
-    // DATOS PERSONALES
-    // ------------------------------------------------------------
+            //
+            // DATOS PERSONALES
+            //
+            PersonaFormAction::SetFechaNacimiento(value) => {
+                new.form.datos_personales.fecha_nacimiento = value.clone();
 
-    pub fn set_fecha_nacimiento(&self, value: Option<String>) {
-        let mut f = (*self.form).clone();
-        f.datos_personales.fecha_nacimiento = value.clone();
+                if let Some(fecha) = value {
+                    if let Some(edad) = calcular_edad(&fecha) {
+                        new.form.datos_personales.edad = Some(edad);
 
-        // Cálculo automático de edad
-        if let Some(fecha) = value {
-            if let Some(edad) = calcular_edad(&fecha) {
-                f.datos_personales.edad = Some(edad);
-
-                // Aviso menor de edad
-                if es_menor_de_edad(edad) {
-                    self.warning_menor_edad.set(Some("La persona es menor de edad".into()));
-                } else {
-                    self.warning_menor_edad.set(None);
+                        new.warning_menor_edad = if es_menor_de_edad(edad) {
+                            Some("La persona es menor de edad".into())
+                        } else {
+                            None
+                        };
+                    }
                 }
+            }
+
+            PersonaFormAction::SetEstadoCivil(value) => {
+                new.form.datos_personales.estado_civil = value;
+            }
+
+            PersonaFormAction::SetSexo(value) => {
+                new.form.datos_personales.sexo = value;
+            }
+
+            PersonaFormAction::SetNacionalidad(value) => {
+                new.form.datos_personales.nacionalidad_iso3 = value;
+            }
+
+            //
+            // DATOS FISCALES
+            //
+            PersonaFormAction::SetIban(value) => {
+                new.form.datos_fiscales.iban = value.clone();
+                new.warning_iban = validar_iban(&value);
+            }
+
+            PersonaFormAction::SetCp(value) => {
+                new.form.datos_fiscales.cp = value;
+            }
+
+            PersonaFormAction::SetDomicilio(value) => {
+                new.form.datos_fiscales.domicilio = value;
+            }
+
+            PersonaFormAction::SetPoblacion(value) => {
+                new.form.datos_fiscales.poblacion = value;
+            }
+
+            PersonaFormAction::SetProvincia(value) => {
+                new.form.datos_fiscales.provincia_cod = value;
+            }
+
+            //
+            // CONTACTO
+            //
+            PersonaFormAction::SetEmail(value) => {
+                new.form.contacto.email = value;
+            }
+
+            PersonaFormAction::SetPrefijoPais(value) => {
+                new.form.contacto.prefijo_pais = value;
+            }
+
+            PersonaFormAction::SetTelefono(value) => {
+                new.form.contacto.telefono = value;
+            }
+
+            //
+            // OTROS DATOS
+            //
+            PersonaFormAction::SetContratar(value) => {
+                new.form.otros.contratar = value;
+            }
+
+            PersonaFormAction::SetObservaciones(value) => {
+                new.form.otros.observaciones = value;
+            }
+
+            PersonaFormAction::SetClasInfo1(value) => {
+                new.form.otros.clas_info_1 = value;
+            }
+
+            PersonaFormAction::SetClasInfo2(value) => {
+                new.form.otros.clas_info_2 = value;
             }
         }
 
-        self.form.set(f);
-    }
-
-    pub fn set_estado_civil(&self, value: EstadoCivil) {
-        let mut f = (*self.form).clone();
-        f.datos_personales.estado_civil = value;
-        self.form.set(f);
-    }
-
-    pub fn set_sexo(&self, value: Sexo) {
-        let mut f = (*self.form).clone();
-        f.datos_personales.sexo = value;
-        self.form.set(f);
-    }
-
-    pub fn set_nacionalidad(&self, value: Option<String>) {
-        let mut f = (*self.form).clone();
-        f.datos_personales.nacionalidad_iso3 = value;
-        self.form.set(f);
-    }
-
-    // ------------------------------------------------------------
-    // DATOS FISCALES
-    // ------------------------------------------------------------
-
-    pub fn set_iban(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.datos_fiscales.iban = value.clone();
-
-        // Validación IBAN
-        let warning = validar_iban(&value);
-        self.warning_iban.set(warning);
-
-        self.form.set(f);
-    }
-
-    pub fn set_cp(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.datos_fiscales.cp = value;
-        self.form.set(f);
-    }
-
-    pub fn set_domicilio(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.datos_fiscales.domicilio = value;
-        self.form.set(f);
-    }
-
-    pub fn set_poblacion(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.datos_fiscales.poblacion = value;
-        self.form.set(f);
-    }
-
-    pub fn set_provincia(&self, value: Option<String>) {
-        let mut f = (*self.form).clone();
-        f.datos_fiscales.provincia_cod = value;
-        self.form.set(f);
-    }
-
-    // ------------------------------------------------------------
-    // CONTACTO
-    // ------------------------------------------------------------
-
-    pub fn set_email(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.contacto.email = value;
-        self.form.set(f);
-    }
-
-    pub fn set_prefijo_pais(&self, value: Option<String>) {
-        let mut f = (*self.form).clone();
-        f.contacto.prefijo_pais = value;
-        self.form.set(f);
-    }
-
-    pub fn set_telefono(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.contacto.telefono = value;
-        self.form.set(f);
-    }
-
-    // ------------------------------------------------------------
-    // OTROS DATOS
-    // ------------------------------------------------------------
-
-    pub fn set_contratar(&self, value: bool) {
-        let mut f = (*self.form).clone();
-        f.otros.contratar = value;
-        self.form.set(f);
-    }
-
-    pub fn set_observaciones(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.otros.observaciones = value;
-        self.form.set(f);
-    }
-
-    pub fn set_clas_info_1(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.otros.clas_info_1 = value;
-        self.form.set(f);
-    }
-
-    pub fn set_clas_info_2(&self, value: String) {
-        let mut f = (*self.form).clone();
-        f.otros.clas_info_2 = value;
-        self.form.set(f);
+        Rc::new(new)
     }
 }

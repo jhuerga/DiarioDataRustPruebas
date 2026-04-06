@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use crate::state::persona_form_state::PersonaFormState;
+use crate::state::persona_form_state::{PersonaFormState, PersonaFormAction};
 
 use super::{
     identificacion_section::IdentificacionSection,
@@ -11,30 +11,33 @@ use super::{
 
 #[function_component(PersonaFormComponent)]
 pub fn persona_form_component() -> Html {
-    // Creamos el estado del formulario
-    let state = {
-        // Necesitamos un componente "falso" para inicializar el estado
-        // Yew requiere un contexto de componente para crear UseStateHandle
-        struct Dummy;
-        impl Component for Dummy {
-            type Message = ();
-            type Properties = ();
+    //
+    // ============================================================
+    //  ESTADO GLOBAL DEL FORMULARIO (REDUCER)
+    // ============================================================
+    //
+    let state = use_reducer(PersonaFormState::default);
 
-            fn create(_ctx: &Context<Self>) -> Self { Self }
-            fn view(&self, _ctx: &Context<Self>) -> Html { html! {} }
-        }
+    //
+    // ============================================================
+    //  HANDLERS GLOBALES (si necesitas alguno aquí)
+    // ============================================================
+    //
 
-        // Creamos un nodo temporal para obtener un contexto válido
-        let node = yew::virtual_dom::VNode::from(html! { <Dummy /> });
-        let ctx = node
-            .as_component()
-            .expect("No se pudo obtener contexto para PersonaFormState");
-
-        PersonaFormState::new(ctx)
+    let on_guardar = {
+        let state = state.clone();
+        Callback::from(move |_| {
+            web_sys::console::log_1(&format!("Guardando registro: {:?}", state.form).into());
+        })
     };
 
+    //
+    // ============================================================
+    //  RENDER
+    // ============================================================
+    //
     html! {
-        <ContextProvider<PersonaFormState> context={state.clone()}>
+        <ContextProvider<UseReducerHandle<PersonaFormState>> context={state}>
             <div class="persona-form">
 
                 <IdentificacionSection />
@@ -44,12 +47,12 @@ pub fn persona_form_component() -> Html {
                 <OtrosDatosSection />
 
                 <div class="acciones-formulario">
-                    <button class="btn-guardar">
+                    <button class="btn-guardar" onclick={on_guardar}>
                         {"Guardar registro"}
                     </button>
                 </div>
 
             </div>
-        </ContextProvider<PersonaFormState>>
+        </ContextProvider<UseReducerHandle<PersonaFormState>>>
     }
 }
