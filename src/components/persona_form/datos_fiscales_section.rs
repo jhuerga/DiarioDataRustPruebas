@@ -1,91 +1,99 @@
 use yew::prelude::*;
-use web_sys::{HtmlInputElement, HtmlSelectElement};
+use crate::state::persona_form_state::{PersonaFormAction, PersonaFormState};
+use crate::components::inputs::{
+    text_field::TextField,
+    select_field::SelectField,
+};
+use crate::state::persona_form_model::Provincia;
 
-use crate::state::persona_form_state::PersonaFormState;
+#[derive(Properties, PartialEq)]
+pub struct DatosFiscalesSectionProps {
+    pub state: UseReducerHandle<PersonaFormState>,
+}
 
 #[function_component(DatosFiscalesSection)]
-pub fn datos_fiscales_section() -> Html {
-    let state = use_context::<PersonaFormState>()
-        .expect("PersonaFormState no encontrado en el contexto");
+pub fn datos_fiscales_section(props: &DatosFiscalesSectionProps) -> Html {
+    let datos = &props.state.form.datos_fiscales;
 
-    let form = (*state.form).clone();
+    //
+    // HANDLERS
+    //
+
+    let on_iban_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetIban(value));
+        })
+    };
+
+    let on_cp_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetCp(value));
+        })
+    };
+
+    let on_domicilio_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetDomicilio(value));
+        })
+    };
+
+    let on_poblacion_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetPoblacion(value));
+        })
+    };
+
+    let on_provincia_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            let v = if value.is_empty() { None } else { Some(value) };
+            state.dispatch(PersonaFormAction::SetProvincia(v));
+        })
+    };
+
+    //
+    // RENDER
+    //
 
     html! {
-        <section class="seccion-datos-fiscales">
-            <h2>{"Datos fiscales"}</h2>
+        <div class="section datos-fiscales-section">
+            <h2>{ "Datos fiscales" }</h2>
 
-            <label>{"Código postal"}</label>
-            <input
-                value={form.datos_fiscales.cp.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_cp(value);
-                    }
-                }}
+            <TextField
+                label="IBAN"
+                value={datos.iban.clone()}
+                on_input={on_iban_change}
+                warning={props.state.warning_iban.clone()}
             />
 
-            <label>{"Domicilio fiscal"}</label>
-            <input
-                value={form.datos_fiscales.domicilio.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_domicilio(value);
-                    }
-                }}
+            <TextField
+                label="Código Postal"
+                value={datos.cp.clone()}
+                on_input={on_cp_change}
             />
 
-            <label>{"Población"}</label>
-            <input
-                value={form.datos_fiscales.poblacion.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_poblacion(value);
-                    }
-                }}
+            <TextField
+                label="Domicilio"
+                value={datos.domicilio.clone()}
+                on_input={on_domicilio_change}
             />
 
-            <label>{"Provincia (código)"}</label>
-            <input
-                value={form.datos_fiscales.provincia_cod.clone().unwrap_or_default()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_provincia(Some(value));
-                    }
-                }}
+            <TextField
+                label="Población"
+                value={datos.poblacion.clone()}
+                on_input={on_poblacion_change}
             />
 
-            <label>{"IBAN"}</label>
-            <input
-                value={form.datos_fiscales.iban.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_iban(value);
-                    }
-                }}
+            <SelectField
+                label="Provincia"
+                value={datos.provincia_cod.clone().unwrap_or_default()}
+                options={Provincia::all_as_pairs()}
+                on_change={on_provincia_change}
             />
-
-            {
-                if let Some(w) = &*state.warning_iban {
-                    html! { <p class="warning">{w}</p> }
-                } else {
-                    html! {}
-                }
-            }
-        </section>
+        </div>
     }
 }

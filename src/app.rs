@@ -1,9 +1,15 @@
 use yew::prelude::*;
-use crate::pages::persona_form_page::PersonaFormPage;
+use yew_router::prelude::*;
+
+use crate::routes::switch;
+use crate::routes::Route;
 
 #[function_component(App)]
 pub fn app() -> Html {
     html! {
-        <PersonaFormPage />
+        <BrowserRouter>
+            <Switch<Route> render={switch} />
+        </BrowserRouter>
     }
 }
+

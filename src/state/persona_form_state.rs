@@ -203,3 +203,11 @@ impl Reducible for PersonaFormState {
         Rc::new(new)
     }
 }
+
+//
+// ============================================================
+//  HOOK PERSONALIZADO PARA EL FORMULARIO
+// ============================================================
+//
+
+// Ya no se necesita, se usa use_reducer directamente en el componente.

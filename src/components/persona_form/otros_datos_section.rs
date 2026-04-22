@@ -1,72 +1,83 @@
 use yew::prelude::*;
-use web_sys::HtmlInputElement;
+use crate::state::persona_form_state::{PersonaFormAction, PersonaFormState};
+use crate::components::inputs::{
+    text_field::TextField,
+    textarea_field::TextareaField,
+    checkbox_field::CheckboxField,
+};
 
-use crate::state::persona_form_state::PersonaFormState;
+#[derive(Properties, PartialEq)]
+pub struct OtrosDatosSectionProps {
+    pub state: UseReducerHandle<PersonaFormState>,
+}
 
 #[function_component(OtrosDatosSection)]
-pub fn otros_datos_section() -> Html {
-    let state = use_context::<PersonaFormState>()
-        .expect("PersonaFormState no encontrado en el contexto");
+pub fn otros_datos_section(props: &OtrosDatosSectionProps) -> Html {
+    let otros = &props.state.form.otros;
 
-    let form = (*state.form).clone();
+    //
+    // HANDLERS
+    //
+
+    let on_contratar_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: bool| {
+            state.dispatch(PersonaFormAction::SetContratar(value));
+        })
+    };
+
+    let on_observaciones_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetObservaciones(value));
+        })
+    };
+
+    let on_clas_info_1_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetClasInfo1(value));
+        })
+    };
+
+    let on_clas_info_2_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetClasInfo2(value));
+        })
+    };
+
+    //
+    // RENDER
+    //
 
     html! {
-        <section class="seccion-otros-datos">
-            <h2>{"Otros datos"}</h2>
+        <div class="section otros-datos-section">
+            <h2>{ "Otros datos" }</h2>
 
-            <label>{"¿Contratar?"}</label>
-            <input
-                type="checkbox"
-                checked={form.otros.contratar}
-                onclick={{
-                    let state = state.clone();
-                    move |e: MouseEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let checked = input.checked();
-                        state.set_contratar(checked);
-                    }
-                }}
+            <CheckboxField
+                label="¿Contratar?"
+                checked={otros.contratar}
+                on_change={on_contratar_change}
             />
 
-            <label>{"Observaciones"}</label>
-            <textarea
-                value={form.otros.observaciones.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_observaciones(value);
-                    }
-                }}
-            >
-            </textarea>
-
-            <label>{"Clasificación interna 1"}</label>
-            <input
-                value={form.otros.clas_info_1.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_clas_info_1(value);
-                    }
-                }}
+            <TextareaField
+                label="Observaciones"
+                value={otros.observaciones.clone()}
+                on_input={on_observaciones_change}
             />
 
-            <label>{"Clasificación interna 2"}</label>
-            <input
-                value={form.otros.clas_info_2.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_clas_info_2(value);
-                    }
-                }}
+            <TextField
+                label="Clasificación interna 1"
+                value={otros.clas_info_1.clone()}
+                on_input={on_clas_info_1_change}
             />
-        </section>
+
+            <TextField
+                label="Clasificación interna 2"
+                value={otros.clas_info_2.clone()}
+                on_input={on_clas_info_2_change}
+            />
+        </div>
     }
 }

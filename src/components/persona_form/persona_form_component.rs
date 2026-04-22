@@ -1,58 +1,60 @@
 use yew::prelude::*;
-use crate::state::persona_form_state::{PersonaFormState, PersonaFormAction};
-
-use super::{
-    identificacion_section::IdentificacionSection,
+use crate::state::persona_form_state::PersonaFormState;
+use crate::components::persona_form::{
     datos_personales_section::DatosPersonalesSection,
     datos_fiscales_section::DatosFiscalesSection,
     contacto_section::ContactoSection,
     otros_datos_section::OtrosDatosSection,
+    identificacion_section::IdentificacionSection,
 };
 
-#[function_component(PersonaFormComponent)]
-pub fn persona_form_component() -> Html {
-    //
-    // ============================================================
-    //  ESTADO GLOBAL DEL FORMULARIO (REDUCER)
-    // ============================================================
-    //
-    let state = use_reducer(PersonaFormState::default);
+#[derive(Properties, PartialEq)]
+pub struct PersonaFormComponentProps {
+    pub state: UseReducerHandle<PersonaFormState>,
+}
 
-    //
-    // ============================================================
-    //  HANDLERS GLOBALES (si necesitas alguno aquí)
-    // ============================================================
-    //
+#[function_component(PersonaFormComponent)]
+pub fn persona_form_component(props: &PersonaFormComponentProps) -> Html {
+    let state = props.state.clone();
 
     let on_guardar = {
         let state = state.clone();
         Callback::from(move |_| {
-            web_sys::console::log_1(&format!("Guardando registro: {:?}", state.form).into());
+            // Log en consola del navegador
+            web_sys::console::log_1(
+                &format!("Guardando registro: {:?}", state.form).into()
+            );
         })
     };
 
-    //
-    // ============================================================
-    //  RENDER
-    // ============================================================
-    //
     html! {
-        <ContextProvider<UseReducerHandle<PersonaFormState>> context={state}>
-            <div class="persona-form">
+        <div class="persona-form-container">
 
-                <IdentificacionSection />
-                <DatosPersonalesSection />
-                <DatosFiscalesSection />
-                <ContactoSection />
-                <OtrosDatosSection />
+            <IdentificacionSection
+                state={state.clone()}
+            />
 
-                <div class="acciones-formulario">
-                    <button class="btn-guardar" onclick={on_guardar}>
-                        {"Guardar registro"}
-                    </button>
-                </div>
+            <DatosPersonalesSection
+                state={state.clone()}
+            />
 
+            <DatosFiscalesSection
+                state={state.clone()}
+            />
+
+            <ContactoSection
+                state={state.clone()}
+            />
+
+            <OtrosDatosSection
+                state={state.clone()}
+            />
+
+            <div class="form-actions">
+                <button onclick={on_guardar} class="btn">
+                    { "Guardar" }
+                </button>
             </div>
-        </ContextProvider<UseReducerHandle<PersonaFormState>>>
+        </div>
     }
 }

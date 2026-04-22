@@ -1,12 +1,13 @@
-use yew::prelude::*;
+mod app;
+mod pages;
+mod components;
+mod state;
+mod routes;
 
-#[function_component(App)]
-fn app() -> Html {
-    html! {
-        <div>{ "Diario Data — Proyecto limpio" }</div>
-    }
-}
+use yew::Renderer;
+use crate::app::App;
 
 fn main() {
-    yew::Renderer::<App>::new().render();
+    Renderer::<App>::new().render();
 }
+

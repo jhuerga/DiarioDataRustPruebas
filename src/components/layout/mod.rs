@@ -1,7 +1,4 @@
-mod sidebar;
-mod topbar;
-mod layout;
+pub mod layout;
+pub mod sidebar;
+pub mod topbar;
 
-pub use sidebar::Sidebar;
-pub use topbar::Topbar;
-pub use layout::Layout;

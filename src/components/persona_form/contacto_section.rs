@@ -1,57 +1,67 @@
 use yew::prelude::*;
-use web_sys::HtmlInputElement;
+use crate::state::persona_form_state::{PersonaFormAction, PersonaFormState};
+use crate::components::inputs::text_field::TextField;
 
-use crate::state::persona_form_state::PersonaFormState;
+#[derive(Properties, PartialEq)]
+pub struct ContactoSectionProps {
+    pub state: UseReducerHandle<PersonaFormState>,
+}
 
 #[function_component(ContactoSection)]
-pub fn contacto_section() -> Html {
-    let state = use_context::<PersonaFormState>()
-        .expect("PersonaFormState no encontrado en el contexto");
+pub fn contacto_section(props: &ContactoSectionProps) -> Html {
+    let contacto = &props.state.form.contacto;
 
-    let form = (*state.form).clone();
+    //
+    // HANDLERS
+    //
+
+    let on_email_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetEmail(value));
+        })
+    };
+
+    let on_prefijo_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            let v = if value.is_empty() { None } else { Some(value) };
+            state.dispatch(PersonaFormAction::SetPrefijoPais(v));
+        })
+    };
+
+    let on_telefono_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetTelefono(value));
+        })
+    };
+
+    //
+    // RENDER
+    //
 
     html! {
-        <section class="seccion-contacto">
-            <h2>{"Contacto"}</h2>
+        <div class="section contacto-section">
+            <h2>{ "Contacto" }</h2>
 
-            <label>{"Email"}</label>
-            <input
-                value={form.contacto.email.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_email(value);
-                    }
-                }}
+            <TextField
+                label="Email"
+                value={contacto.email.clone()}
+                on_input={on_email_change}
             />
 
-            <label>{"Prefijo país"}</label>
-            <input
-                value={form.contacto.prefijo_pais.clone().unwrap_or_default()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_prefijo_pais(Some(value));
-                    }
-                }}
+            <TextField
+                label="Prefijo país"
+                value={contacto.prefijo_pais.clone().unwrap_or_default()}
+                on_input={on_prefijo_change}
             />
 
-            <label>{"Teléfono"}</label>
-            <input
-                value={form.contacto.telefono.clone()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_telefono(value);
-                    }
-                }}
+            <TextField
+                label="Teléfono"
+                value={contacto.telefono.clone()}
+                on_input={on_telefono_change}
             />
-        </section>
+        </div>
     }
 }

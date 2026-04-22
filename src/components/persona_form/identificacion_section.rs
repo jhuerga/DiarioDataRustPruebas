@@ -1,0 +1,81 @@
+use yew::prelude::*;
+use crate::state::persona_form_state::{PersonaFormAction, PersonaFormState};
+use crate::components::inputs::{
+    text_field::TextField,
+    select_field::SelectField,
+};
+use crate::state::persona_form_model::{TipoDocumento};
+
+#[derive(Properties, PartialEq)]
+pub struct IdentificacionSectionProps {
+    pub state: UseReducerHandle<PersonaFormState>,
+}
+
+#[function_component(IdentificacionSection)]
+pub fn identificacion_section(props: &IdentificacionSectionProps) -> Html {
+    let state = &props.state.form.identificacion;
+
+    let on_dni_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetDni(value));
+        })
+    };
+
+    let on_tipo_doc_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            if let Ok(tipo) = value.parse::<TipoDocumento>() {
+                state.dispatch(PersonaFormAction::SetTipoDocumento(tipo));
+            }
+        })
+    };
+
+    let on_naf_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetNaf(value));
+        })
+    };
+
+    let on_fecha_caducidad_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            let v = if value.is_empty() { None } else { Some(value) };
+            state.dispatch(PersonaFormAction::SetFechaCaducidadDocumento(v));
+        })
+    };
+
+    html! {
+        <div class="section identificacion-section">
+            <h2>{ "Identificación" }</h2>
+
+            <SelectField
+                label="Tipo de documento"
+                value={state.tipo_documento.to_string()}
+                options={TipoDocumento::all_as_pairs()}
+                on_change={on_tipo_doc_change}
+            />
+
+            <TextField
+                label="DNI / NIE / Pasaporte"
+                value={state.dni.clone()}
+                on_input={on_dni_change}
+                warning={props.state.warning_dni.clone()}
+            />
+
+            <TextField
+                label="NAF"
+                value={state.naf.clone()}
+                on_input={on_naf_change}
+                warning={props.state.warning_naf.clone()}
+            />
+
+            <TextField
+                label="Fecha de caducidad"
+                value={state.fecha_caducidad_documento.clone().unwrap_or_default()}
+                on_input={on_fecha_caducidad_change}
+            />
+        </div>
+    }
+}

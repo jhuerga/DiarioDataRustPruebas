@@ -1,160 +1,100 @@
 use yew::prelude::*;
-use web_sys::{HtmlInputElement, HtmlSelectElement};
+use crate::state::persona_form_state::{PersonaFormAction, PersonaFormState};
+use crate::components::inputs::{
+    text_field::TextField,
+    select_field::SelectField,
+};
+use crate::state::persona_form_model::{EstadoCivil, Sexo};
 
-use crate::state::persona_form_state::PersonaFormState;
-use crate::state::persona_form_model::{Sexo, EstadoCivil};
+#[derive(Properties, PartialEq)]
+pub struct DatosPersonalesSectionProps {
+    pub state: UseReducerHandle<PersonaFormState>,
+}
 
 #[function_component(DatosPersonalesSection)]
-pub fn datos_personales_section() -> Html {
-    // Obtenemos el estado desde el contexto
-    let state = use_context::<PersonaFormState>()
-        .expect("PersonaFormState no encontrado en el contexto");
+pub fn datos_personales_section(props: &DatosPersonalesSectionProps) -> Html {
+    let datos = &props.state.form.datos_personales;
 
-    let form = (*state.form).clone();
+    //
+    // HANDLERS
+    //
+
+    let on_fecha_nacimiento_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            let v = if value.is_empty() { None } else { Some(value) };
+            state.dispatch(PersonaFormAction::SetFechaNacimiento(v));
+        })
+    };
+
+    let on_estado_civil_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            if let Ok(ec) = value.parse::<EstadoCivil>() {
+                state.dispatch(PersonaFormAction::SetEstadoCivil(ec));
+            }
+        })
+    };
+
+    let on_sexo_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            if let Ok(sexo) = value.parse::<Sexo>() {
+                state.dispatch(PersonaFormAction::SetSexo(sexo));
+            }
+        })
+    };
+
+    let on_nacionalidad_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            let v = if value.is_empty() { None } else { Some(value) };
+            state.dispatch(PersonaFormAction::SetNacionalidad(v));
+        })
+    };
+
+    //
+    // RENDER
+    //
 
     html! {
-        <section class="seccion-datos-personales">
-            <h2>{"Datos personales"}</h2>
+        <div class="section datos-personales-section">
+            <h2>{ "Datos personales" }</h2>
 
-            // FECHA DE NACIMIENTO
-            <label>{"Fecha de nacimiento"}</label>
-            <input
-                type="date"
-                value={form.datos_personales.fecha_nacimiento.clone().unwrap_or_default()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_fecha_nacimiento(Some(value));
-                    }
-                }}
+            <TextField
+                label="Fecha de nacimiento"
+                value={datos.fecha_nacimiento.clone().unwrap_or_default()}
+                on_input={on_fecha_nacimiento_change}
+                warning={props.state.warning_menor_edad.clone()}
+            />
+
+            <SelectField
+                label="Estado civil"
+                value={datos.estado_civil.to_string()}
+                options={EstadoCivil::all_as_pairs()}
+                on_change={on_estado_civil_change}
+            />
+
+            <SelectField
+                label="Sexo"
+                value={datos.sexo.to_string()}
+                options={Sexo::all_as_pairs()}
+                on_change={on_sexo_change}
+            />
+
+            <TextField
+                label="Nacionalidad (ISO3)"
+                value={datos.nacionalidad_iso3.clone().unwrap_or_default()}
+                on_input={on_nacionalidad_change}
             />
 
             {
-                if let Some(w) = &*state.warning_menor_edad {
-                    html! { <p class="warning">{w}</p> }
+                if let Some(edad) = datos.edad {
+                    html! { <p class="edad-info">{ format!("Edad calculada: {} años", edad) }</p> }
                 } else {
                     html! {}
                 }
             }
-
-            // EDAD (SOLO LECTURA)
-            <label>{"Edad"}</label>
-            <input
-                type="number"
-                readonly=true
-                value={form.datos_personales.edad.map(|e| e.to_string()).unwrap_or_default()}
-            />
-
-            // SEXO
-            <label>{"Sexo"}</label>
-            <select
-                onchange={{
-                    let state = state.clone();
-                    move |e: Event| {
-                        let select: HtmlSelectElement = e.target_unchecked_into();
-                        let value = select.value();
-                        let sexo = match value.as_str() {
-                            "VARON" => Sexo::Varon,
-                            "MUJER" => Sexo::Mujer,
-                            _ => Sexo::NA,
-                        };
-                        state.set_sexo(sexo);
-                    }
-                }}
-            >
-                <option
-                    value="VARON"
-                    selected={matches!(form.datos_personales.sexo, Sexo::Varon)}
-                >
-                    {"Varón"}
-                </option>
-                <option
-                    value="MUJER"
-                    selected={matches!(form.datos_personales.sexo, Sexo::Mujer)}
-                >
-                    {"Mujer"}
-                </option>
-                <option
-                    value="NA"
-                    selected={matches!(form.datos_personales.sexo, Sexo::NA)}
-                >
-                    {"N/A"}
-                </option>
-            </select>
-
-            // NACIONALIDAD ISO3
-            <label>{"Nacionalidad (ISO3)"}</label>
-            <input
-                value={form.datos_personales.nacionalidad_iso3.clone().unwrap_or_default()}
-                oninput={{
-                    let state = state.clone();
-                    move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        let value = input.value();
-                        state.set_nacionalidad(Some(value));
-                    }
-                }}
-            />
-
-            // ESTADO CIVIL
-            <label>{"Estado civil"}</label>
-            <select
-                onchange={{
-                    let state = state.clone();
-                    move |e: Event| {
-                        let select: HtmlSelectElement = e.target_unchecked_into();
-                        let value = select.value();
-                        let estado = match value.as_str() {
-                            "SOLTERO" => EstadoCivil::Soltero,
-                            "CASADO" => EstadoCivil::Casado,
-                            "VIUDO" => EstadoCivil::Viudo,
-                            "DIVORCIADO" => EstadoCivil::Divorciado,
-                            "PAREJA" => EstadoCivil::ParejaDeHecho,
-                            _ => EstadoCivil::Desconocido,
-                        };
-                        state.set_estado_civil(estado);
-                    }
-                }}
-            >
-                <option
-                    value="SOLTERO"
-                    selected={matches!(form.datos_personales.estado_civil, EstadoCivil::Soltero)}
-                >
-                    {"Soltero"}
-                </option>
-                <option
-                    value="CASADO"
-                    selected={matches!(form.datos_personales.estado_civil, EstadoCivil::Casado)}
-                >
-                    {"Casado"}
-                </option>
-                <option
-                    value="VIUDO"
-                    selected={matches!(form.datos_personales.estado_civil, EstadoCivil::Viudo)}
-                >
-                    {"Viudo"}
-                </option>
-                <option
-                    value="DIVORCIADO"
-                    selected={matches!(form.datos_personales.estado_civil, EstadoCivil::Divorciado)}
-                >
-                    {"Divorciado"}
-                </option>
-                <option
-                    value="PAREJA"
-                    selected={matches!(form.datos_personales.estado_civil, EstadoCivil::ParejaDeHecho)}
-                >
-                    {"Pareja de hecho"}
-                </option>
-                <option
-                    value="DESCONOCIDO"
-                    selected={matches!(form.datos_personales.estado_civil, EstadoCivil::Desconocido)}
-                >
-                    {"Desconocido"}
-                </option>
-            </select>
-        </section>
+        </div>
     }
 }

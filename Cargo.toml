@@ -4,6 +4,31 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# --- YEW ---
 yew = { version = "0.21", features = ["csr"] }
 yew-router = "0.18"
+
+# --- WASM ---
 wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = [
+    "HtmlInputElement",
+    "HtmlSelectElement",
+    "console"
+] }
+
+# --- UTILIDADES ---
+gloo = { version = "0.11", features = ["timers", "events"] }
+
+# --- SERIALIZACIÓN ---
+serde = { version = "1.0", features = ["derive"] }
+
+# --- FECHAS ---
+chrono = { version = "0.4", features = ["serde"] }
+
+# --- DEBUG ---
+console_error_panic_hook = "0.1"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+
