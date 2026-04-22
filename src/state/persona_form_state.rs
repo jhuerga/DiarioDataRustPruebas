@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 //
 // ============================================================
-//  ESTADO PRINCIPAL DEL FORMULARIO (REDUCER MODERNO)
+//  ESTADO PRINCIPAL DEL FORMULARIO
 // ============================================================
 //
 
@@ -33,36 +33,39 @@ impl Default for PersonaFormState {
 
 //
 // ============================================================
-//  ACCIONES DEL REDUCER
+//  ACCIONES DEL REDUCER (COMPLETAS Y SIN DUPLICADOS)
 // ============================================================
 //
 
 pub enum PersonaFormAction {
-    // Identificación
+    // IDENTIFICACIÓN
     SetDni(String),
+    SetCodigo(String),
     SetTipoDocumento(TipoDocumento),
+    SetApellidos(String),
+    SetNombre(String),
     SetNaf(String),
     SetFechaCaducidadDocumento(Option<String>),
 
-    // Datos personales
+    // DATOS PERSONALES
     SetFechaNacimiento(Option<String>),
-    SetEstadoCivil(EstadoCivil),
     SetSexo(Sexo),
     SetNacionalidad(Option<String>),
+    SetEstadoCivil(EstadoCivil),
 
-    // Datos fiscales
-    SetIban(String),
+    // DATOS FISCALES
     SetCp(String),
     SetDomicilio(String),
     SetPoblacion(String),
     SetProvincia(Option<String>),
+    SetIban(String),
 
-    // Contacto
+    // CONTACTO
     SetEmail(String),
     SetPrefijoPais(Option<String>),
     SetTelefono(String),
 
-    // Otros datos
+    // OTROS DATOS
     SetContratar(bool),
     SetObservaciones(String),
     SetClasInfo1(String),
@@ -71,7 +74,7 @@ pub enum PersonaFormAction {
 
 //
 // ============================================================
-//  REDUCER PRINCIPAL
+//  REDUCER
 // ============================================================
 //
 
@@ -82,55 +85,65 @@ impl Reducible for PersonaFormState {
         let mut new = (*self).clone();
 
         match action {
-            //
+
+            // -------------------------
             // IDENTIFICACIÓN
-            //
+            // -------------------------
             PersonaFormAction::SetDni(value) => {
-                new.form.identificacion.dni = value.clone();
+                new.form.identificacion.dni = value;
                 new.warning_dni = validar_dni_nie_pasaporte(
-                    &value,
-                    &new.form.identificacion.tipo_documento,
+                    &new.form.identificacion.dni,
+                    &new.form.identificacion.tipo_documento
                 );
+            }
+
+            PersonaFormAction::SetCodigo(value) => {
+                new.form.identificacion.codigo = value;
             }
 
             PersonaFormAction::SetTipoDocumento(value) => {
-                new.form.identificacion.tipo_documento = value.clone();
-                new.warning_dni = validar_dni_nie_pasaporte(
-                    &new.form.identificacion.dni,
-                    &value,
-                );
+                new.form.identificacion.tipo_documento = value;
+            }
+
+            PersonaFormAction::SetApellidos(value) => {
+                new.form.identificacion.apellidos = value;
+            }
+
+            PersonaFormAction::SetNombre(value) => {
+                new.form.identificacion.nombre = value;
             }
 
             PersonaFormAction::SetNaf(value) => {
-                new.form.identificacion.naf = value.clone();
-                new.warning_naf = validar_naf(&value);
+                new.form.identificacion.naf = value;
+                new.warning_naf = validar_naf(&new.form.identificacion.naf);
             }
 
             PersonaFormAction::SetFechaCaducidadDocumento(value) => {
                 new.form.identificacion.fecha_caducidad_documento = value;
             }
 
-            //
+            // -------------------------
             // DATOS PERSONALES
-            //
+            // -------------------------
             PersonaFormAction::SetFechaNacimiento(value) => {
-                new.form.datos_personales.fecha_nacimiento = value.clone();
+                new.form.datos_personales.fecha_nacimiento = value;
 
-                if let Some(fecha) = value {
-                    if let Some(edad) = calcular_edad(&fecha) {
-                        new.form.datos_personales.edad = Some(edad);
+                if let Some(fecha) = &new.form.datos_personales.fecha_nacimiento {
+                    new.form.datos_personales.edad = calcular_edad(fecha);
+                } else {
+                    new.form.datos_personales.edad = None;
+                }
 
-                        new.warning_menor_edad = if es_menor_de_edad(edad) {
-                            Some("La persona es menor de edad".into())
+                new.warning_menor_edad =
+                    if let Some(edad) = new.form.datos_personales.edad {
+                        if es_menor_de_edad(edad as u16) {
+                            Some("La persona es menor de edad".to_string())
                         } else {
                             None
-                        };
-                    }
-                }
-            }
-
-            PersonaFormAction::SetEstadoCivil(value) => {
-                new.form.datos_personales.estado_civil = value;
+                        }
+                    } else {
+                        None
+                    };
             }
 
             PersonaFormAction::SetSexo(value) => {
@@ -141,14 +154,13 @@ impl Reducible for PersonaFormState {
                 new.form.datos_personales.nacionalidad_iso3 = value;
             }
 
-            //
-            // DATOS FISCALES
-            //
-            PersonaFormAction::SetIban(value) => {
-                new.form.datos_fiscales.iban = value.clone();
-                new.warning_iban = validar_iban(&value);
+            PersonaFormAction::SetEstadoCivil(value) => {
+                new.form.datos_personales.estado_civil = value;
             }
 
+            // -------------------------
+            // DATOS FISCALES
+            // -------------------------
             PersonaFormAction::SetCp(value) => {
                 new.form.datos_fiscales.cp = value;
             }
@@ -165,9 +177,14 @@ impl Reducible for PersonaFormState {
                 new.form.datos_fiscales.provincia_cod = value;
             }
 
-            //
+            PersonaFormAction::SetIban(value) => {
+                new.form.datos_fiscales.iban = value;
+                new.warning_iban = validar_iban(&new.form.datos_fiscales.iban);
+            }
+
+            // -------------------------
             // CONTACTO
-            //
+            // -------------------------
             PersonaFormAction::SetEmail(value) => {
                 new.form.contacto.email = value;
             }
@@ -180,9 +197,9 @@ impl Reducible for PersonaFormState {
                 new.form.contacto.telefono = value;
             }
 
-            //
+            // -------------------------
             // OTROS DATOS
-            //
+            // -------------------------
             PersonaFormAction::SetContratar(value) => {
                 new.form.otros.contratar = value;
             }
@@ -204,10 +221,3 @@ impl Reducible for PersonaFormState {
     }
 }
 
-//
-// ============================================================
-//  HOOK PERSONALIZADO PARA EL FORMULARIO
-// ============================================================
-//
-
-// Ya no se necesita, se usa use_reducer directamente en el componente.

@@ -30,11 +30,10 @@ pub fn identificacion_section(props: &IdentificacionSectionProps) -> Html {
             }
         })
     };
-
-    let on_naf_change = {
+    let on_codigo_change = {
         let state = props.state.clone();
         Callback::from(move |value: String| {
-            state.dispatch(PersonaFormAction::SetNaf(value));
+            state.dispatch(PersonaFormAction::SetCodigo(value));
         })
     };
 
@@ -46,9 +45,31 @@ pub fn identificacion_section(props: &IdentificacionSectionProps) -> Html {
         })
     };
 
+
+    let on_naf_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetNaf(value));
+        })
+    };
+
+    let on_apellidos_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetApellidos(value));
+        })
+    };
+
+    let on_nombre_change = {
+        let state = props.state.clone();
+        Callback::from(move |value: String| {
+            state.dispatch(PersonaFormAction::SetNombre(value));
+        })
+    };
+
     html! {
         <div class="section identificacion-section">
-            <h2>{ "Identificación" }</h2>
+            <h2>{ "Identificaci?n" }</h2>
 
             <SelectField
                 label="Tipo de documento"
@@ -70,11 +91,30 @@ pub fn identificacion_section(props: &IdentificacionSectionProps) -> Html {
                 on_input={on_naf_change}
                 warning={props.state.warning_naf.clone()}
             />
+            <TextField
+                label="Código interno"
+                value={state.codigo.clone()}
+                on_input={on_codigo_change}
+            />
+
 
             <TextField
-                label="Fecha de caducidad"
+                label="Fecha caducidad documento"
                 value={state.fecha_caducidad_documento.clone().unwrap_or_default()}
                 on_input={on_fecha_caducidad_change}
+            />
+
+
+            <TextField
+                label="Apellidos"
+                value={state.apellidos.clone()}
+                on_input={on_apellidos_change}
+            />
+
+            <TextField
+                label="Nombre"
+                value={state.nombre.clone()}
+                on_input={on_nombre_change}
             />
         </div>
     }

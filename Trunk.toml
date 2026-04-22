@@ -1,5 +1,6 @@
 [build]
 target = "index.html"
+public_dir = "public"
 
 [serve]
 port = 8080
